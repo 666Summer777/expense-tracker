@@ -96,6 +96,32 @@
   background: #357abd;
 }
 
+/* Toolbar */
+.toolbar {
+  padding: 0 16px 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.tool-btn {
+  flex: 1;
+  background: #fff;
+  color: #4a90d9;
+  border: 1px solid #4a90d9;
+  border-radius: 8px;
+  padding: 8px 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  min-height: 40px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.tool-btn:active {
+  background: #4a90d9;
+  color: #fff;
+}
+
 /* Add Expense Form */
 .add-form {
   background: #fff;
@@ -293,6 +319,17 @@
 
   .date-label {
     color: #999;
+  }
+
+  .tool-btn {
+    background: #16213e;
+    border-color: #4a90d9;
+    color: #4a90d9;
+  }
+
+  .tool-btn:active {
+    background: #4a90d9;
+    color: #fff;
   }
 
   .empty {

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import './App.css'
 
 const CATEGORIES = [
@@ -45,10 +45,35 @@ function saveJSON(key, value) {
   localStorage.setItem(key, JSON.stringify(value))
 }
 
+function downloadFile(filename, content, mime) {
+  const blob = new Blob([content], { type: mime })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function exportJSON(expenses, budgetMap) {
+  const data = JSON.stringify({ expenses, budget: budgetMap }, null, 2)
+  downloadFile('expense-tracker-backup.json', data, 'application/json')
+}
+
+function exportCSV(expenses) {
+  const header = 'Date,Name,Category,Amount'
+  const rows = expenses.map(e =>
+    `${e.date},"${e.name}","${e.category}",${e.amount}`
+  )
+  const csv = [header, ...rows].join('\n')
+  downloadFile('expense-tracker-data.csv', csv, 'text/csv;charset=utf-8')
+}
+
 export default function App() {
   const [expenses, setExpenses] = useState(() => loadJSON('expenses', []))
   const [budgetMap, setBudgetMap] = useState(() => loadJSON('budget', {}))
   const [budgetInput, setBudgetInput] = useState('')
+  const fileInputRef = useRef(null)
 
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
@@ -126,6 +151,28 @@ export default function App() {
     setExpenses(prev => prev.filter(e => e.id !== id))
   }, [])
 
+  const handleImport = useCallback(() => {
+    const file = fileInputRef.current?.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result)
+        if (Array.isArray(data.expenses) && data.budget && typeof data.budget === 'object') {
+          setExpenses(data.expenses)
+          setBudgetMap(data.budget)
+          alert(`Imported ${data.expenses.length} expenses successfully!`)
+        } else {
+          alert('Invalid backup file: missing expenses or budget data.')
+        }
+      } catch {
+        alert('Failed to parse file. Please select a valid JSON backup.')
+      }
+    }
+    reader.readAsText(file)
+    fileInputRef.current.value = ''
+  }, [])
+
   return (
     <div className="app">
       <div className="header">Expense Tracker</div>
@@ -162,6 +209,26 @@ export default function App() {
           inputMode="numeric"
         />
         <button onClick={handleSetBudget}>Set Budget</button>
+      </div>
+
+      {/* Export / Import */}
+      <div className="toolbar">
+        <button className="tool-btn" onClick={() => exportJSON(expenses, budgetMap)}>
+          Export JSON
+        </button>
+        <button className="tool-btn" onClick={() => exportCSV(expenses)}>
+          Export CSV
+        </button>
+        <input
+          type="file"
+          accept=".json"
+          ref={fileInputRef}
+          onChange={handleImport}
+          style={{ display: 'none' }}
+        />
+        <button className="tool-btn" onClick={() => fileInputRef.current?.click()}>
+          Import JSON
+        </button>
       </div>
 
       {/* Add Form */}
