@@ -92,11 +92,13 @@ export default function App() {
   const [budgetMap, setBudgetMap] = useState(() => loadJSON('budget', {}))
   const [budgetInput, setBudgetInput] = useState('')
   const fileInputRef = useRef(null)
+  const backupMenuRef = useRef(null)
 
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState(CATEGORIES[0])
   const [date, setDate] = useState(todayStr())
+  const [backupMenuOpen, setBackupMenuOpen] = useState(false)
 
   const month = currentMonthStr()
   const today = todayStr()
@@ -109,6 +111,30 @@ export default function App() {
       setBudgetInput(String(budgetMap[month]))
     }
   }, [month]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!backupMenuOpen) return
+
+    const handlePointerDown = (event) => {
+      if (!backupMenuRef.current?.contains(event.target)) {
+        setBackupMenuOpen(false)
+      }
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setBackupMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [backupMenuOpen])
 
   const { monthlyTotal, todayTotal } = useMemo(() => {
     const monthExpenses = expenses.filter(e => e.date.startsWith(month + '-'))
@@ -189,6 +215,21 @@ export default function App() {
     fileInputRef.current.value = ''
   }, [])
 
+  const handleExportJSON = useCallback(() => {
+    exportJSON(expenses, budgetMap)
+    setBackupMenuOpen(false)
+  }, [expenses, budgetMap])
+
+  const handleExportCSV = useCallback(() => {
+    exportCSV(expenses)
+    setBackupMenuOpen(false)
+  }, [expenses])
+
+  const handleSelectImport = useCallback(() => {
+    setBackupMenuOpen(false)
+    fileInputRef.current?.click()
+  }, [])
+
   const progressColor =
     budgetPercent >= 90 ? '#ef4444' :
     budgetPercent >= 70 ? '#f59e0b' :
@@ -196,7 +237,42 @@ export default function App() {
 
   return (
     <div className="app">
-      <div className="header">Expense Tracker</div>
+      <div className="header">
+        <div className="header-title">Expense Tracker</div>
+        <div className="header-actions" ref={backupMenuRef}>
+          <button
+            type="button"
+            className="more-btn"
+            onClick={() => setBackupMenuOpen(open => !open)}
+            aria-haspopup="menu"
+            aria-expanded={backupMenuOpen}
+            aria-label="Open backup menu"
+          >
+            More
+          </button>
+          {backupMenuOpen && (
+            <div className="backup-menu" role="menu" aria-label="Backup">
+              <div className="backup-menu-title">Backup</div>
+              <button type="button" className="backup-menu-item" onClick={handleExportJSON} role="menuitem">
+                Export JSON
+              </button>
+              <button type="button" className="backup-menu-item" onClick={handleExportCSV} role="menuitem">
+                Export CSV
+              </button>
+              <button type="button" className="backup-menu-item" onClick={handleSelectImport} role="menuitem">
+                Import JSON
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      <input
+        type="file"
+        accept=".json"
+        ref={fileInputRef}
+        onChange={handleImport}
+        style={{ display: 'none' }}
+      />
 
       {/* Summary Cards */}
       <div className="summary">
@@ -253,26 +329,6 @@ export default function App() {
           inputMode="numeric"
         />
         <button onClick={handleSetBudget}>Set Budget</button>
-      </div>
-
-      {/* Export / Import */}
-      <div className="toolbar">
-        <button className="tool-btn" onClick={() => exportJSON(expenses, budgetMap)}>
-          ↓ Export JSON
-        </button>
-        <button className="tool-btn" onClick={() => exportCSV(expenses)}>
-          ↓ Export CSV
-        </button>
-        <input
-          type="file"
-          accept=".json"
-          ref={fileInputRef}
-          onChange={handleImport}
-          style={{ display: 'none' }}
-        />
-        <button className="tool-btn" onClick={() => fileInputRef.current?.click()}>
-          ↑ Import JSON
-        </button>
       </div>
 
       {/* Add Form */}

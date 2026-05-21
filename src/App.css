@@ -11,7 +11,9 @@
   background: #1a1a2e;
   color: #fff;
   padding: 18px 20px 16px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -20,6 +22,78 @@
   z-index: 10;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(10px);
+}
+
+.header-title {
+  pointer-events: none;
+}
+
+.header-actions {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.more-btn {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 34px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.more-btn:active {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(0.96);
+}
+
+.backup-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: 180px;
+  background: #fff;
+  color: #1c1c1e;
+  border: 1px solid #e5e5ea;
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.18);
+  text-align: left;
+}
+
+.backup-menu-title {
+  padding: 6px 10px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #8e8e93;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.backup-menu-item {
+  width: 100%;
+  background: transparent;
+  color: #1c1c1e;
+  border: none;
+  border-radius: 8px;
+  padding: 11px 10px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  min-height: 42px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.backup-menu-item:active {
+  background: #eff6ff;
+  color: #2563eb;
 }
 
 /* Summary Cards */
@@ -156,34 +230,6 @@
 
 .budget-bar button:active {
   background: #2563eb;
-  transform: scale(0.96);
-}
-
-/* Toolbar */
-.toolbar {
-  margin: 0 16px 12px;
-  display: flex;
-  gap: 8px;
-}
-
-.tool-btn {
-  flex: 1;
-  background: #fff;
-  color: #3b82f6;
-  border: 1px solid #e5e5ea;
-  border-radius: 12px;
-  padding: 10px 6px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  min-height: 42px;
-  transition: background 0.2s, border-color 0.2s, transform 0.1s;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-.tool-btn:active {
-  background: #eff6ff;
-  border-color: #3b82f6;
   transform: scale(0.96);
 }
 
@@ -473,7 +519,7 @@
   .add-form,
   .expense-item,
   .budget-progress,
-  .tool-btn {
+  .backup-menu {
     background: #1c1c2e;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     color: #e5e5e7;
@@ -490,7 +536,8 @@
   .divider,
   .empty-sub,
   .progress-label,
-  .progress-sub {
+  .progress-sub,
+  .backup-menu-title {
     color: #6b6b7b;
   }
 
@@ -520,14 +567,17 @@
     color: #fff;
   }
 
-  .tool-btn {
+  .backup-menu {
     border-color: #2a2a3e;
-    color: #60a5fa;
   }
 
-  .tool-btn:active {
+  .backup-menu-item {
+    color: #e5e5e7;
+  }
+
+  .backup-menu-item:active {
     background: #1e3a5f;
-    border-color: #3b82f6;
+    color: #93c5fd;
   }
 
   .expense-info .name {
