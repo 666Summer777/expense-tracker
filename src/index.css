@@ -15,7 +15,8 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
     "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial,
     sans-serif;
-  background: #f2f2f7;
+  min-height: 100dvh;
+  background: #fff8f2;
   color: #1c1c1e;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;

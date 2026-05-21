@@ -263,9 +263,9 @@ export default function App() {
   }, [])
 
   const progressColor =
-    budgetPercent >= 90 ? '#ef4444' :
-    budgetPercent >= 70 ? '#f59e0b' :
-    '#22c55e'
+    budgetPercent >= 90 ? 'linear-gradient(90deg, #fda4af 0%, #fb7185 100%)' :
+    budgetPercent >= 70 ? 'linear-gradient(90deg, #fde68a 0%, #fbbf24 100%)' :
+    'linear-gradient(90deg, #a7f3d0 0%, #93c5fd 100%)'
 
   return (
     <div className="app">
@@ -280,7 +280,7 @@ export default function App() {
             aria-expanded={backupMenuOpen}
             aria-label="Open backup menu"
           >
-            More
+            ...
           </button>
           {backupMenuOpen && (
             <div className="backup-menu" role="menu" aria-label="Backup">
@@ -344,8 +344,8 @@ export default function App() {
           <div className="progress-sub">
             ${monthlyTotal.toLocaleString()} of ${currentBudget.toLocaleString()}
             {remaining >= 0
-              ? ` • $${remaining.toLocaleString()} left`
-              : ` • $${Math.abs(remaining).toLocaleString()} over`
+              ? ` - $${remaining.toLocaleString()} left`
+              : ` - $${Math.abs(remaining).toLocaleString()} over`
             }
           </div>
         </div>
@@ -378,7 +378,6 @@ export default function App() {
             value={amount}
             onChange={e => setAmount(e.target.value)}
             inputMode="decimal"
-            style={{ maxWidth: 130 }}
           />
         </div>
 
@@ -404,7 +403,6 @@ export default function App() {
             type="date"
             value={date}
             onChange={e => setDate(e.target.value)}
-            style={{ maxWidth: 170 }}
           />
         </div>
         <button type="submit" className="add-btn">Add Expense</button>
