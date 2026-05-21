@@ -99,6 +99,7 @@ export default function App() {
   const [category, setCategory] = useState(CATEGORIES[0])
   const [date, setDate] = useState(todayStr())
   const [backupMenuOpen, setBackupMenuOpen] = useState(false)
+  const [pendingDeleteExpense, setPendingDeleteExpense] = useState(null)
 
   const month = currentMonthStr()
   const today = todayStr()
@@ -135,6 +136,22 @@ export default function App() {
       document.removeEventListener('keydown', handleKeyDown)
     }
   }, [backupMenuOpen])
+
+  useEffect(() => {
+    if (!pendingDeleteExpense) return
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setPendingDeleteExpense(null)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [pendingDeleteExpense])
 
   const { monthlyTotal, todayTotal } = useMemo(() => {
     const monthExpenses = expenses.filter(e => e.date.startsWith(month + '-'))
@@ -192,6 +209,21 @@ export default function App() {
   const handleDelete = useCallback((id) => {
     setExpenses(prev => prev.filter(e => e.id !== id))
   }, [])
+
+  const handleRequestDelete = useCallback((expense) => {
+    setBackupMenuOpen(false)
+    setPendingDeleteExpense(expense)
+  }, [])
+
+  const handleCancelDelete = useCallback(() => {
+    setPendingDeleteExpense(null)
+  }, [])
+
+  const handleConfirmDelete = useCallback(() => {
+    if (!pendingDeleteExpense) return
+    handleDelete(pendingDeleteExpense.id)
+    setPendingDeleteExpense(null)
+  }, [handleDelete, pendingDeleteExpense])
 
   const handleImport = useCallback(() => {
     const file = fileInputRef.current?.files?.[0]
@@ -406,17 +438,58 @@ export default function App() {
                 </div>
                 <div className="expense-amount">-${e.amount.toLocaleString()}</div>
                 <button
+                  type="button"
                   className="expense-delete"
-                  onClick={() => handleDelete(e.id)}
+                  onClick={() => handleRequestDelete(e)}
                   title="Delete"
+                  aria-label={`Delete ${e.name}`}
                 >
-                  {'✕'}
+                  X
                 </button>
               </div>
             ))}
           </div>
         ))}
       </div>
+
+      {pendingDeleteExpense && (
+        <div className="delete-confirm-overlay" onClick={handleCancelDelete}>
+          <div
+            className="delete-confirm-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-confirm-title"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="delete-confirm-kicker">Confirm delete</div>
+            <div className="delete-confirm-title" id="delete-confirm-title">
+              Delete expense?
+            </div>
+            <div className="delete-confirm-expense">
+              <div className="delete-confirm-name">{pendingDeleteExpense.name}</div>
+              <div className="delete-confirm-amount">
+                -${pendingDeleteExpense.amount.toLocaleString()}
+              </div>
+            </div>
+            <div className="delete-confirm-actions">
+              <button
+                type="button"
+                className="delete-confirm-cancel"
+                onClick={handleCancelDelete}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="delete-confirm-delete"
+                onClick={handleConfirmDelete}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
