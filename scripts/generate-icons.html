@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generate PNG Icons</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; text-align: center; }
+  h1 { font-size: 20px; }
+  .preview { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin: 20px 0; }
+  .preview div { text-align: center; }
+  canvas { border: 1px solid #ddd; border-radius: 16px; margin-bottom: 8px; }
+  button { padding: 10px 24px; font-size: 16px; margin: 5px; border: none; border-radius: 10px; background: #3b82f6; color: #fff; cursor: pointer; }
+  button:active { background: #2563eb; }
+  .info { color: #666; font-size: 14px; margin: 20px 0; line-height: 1.6; }
+  code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>Expense Tracker — Icon Generator</h1>
+<p class="info">
+  Click each button to download the PNG icon.<br>
+  Save all three files to: <code>public/</code> folder, then run <code>npm run build</code> again.
+</p>
+
+<div class="preview">
+  <div>
+    <canvas id="c180" width="180" height="180"></canvas><br>
+    <button onclick="downloadIcon(180)">Download icon-180.png</button>
+  </div>
+  <div>
+    <canvas id="c192" width="192" height="192"></canvas><br>
+    <button onclick="downloadIcon(192)">Download icon-192.png</button>
+  </div>
+  <div>
+    <canvas id="c512" width="512" height="512"></canvas><br>
+    <button onclick="downloadIcon(512)">Download icon-512.png</button>
+  </div>
+</div>
+
+<p class="info" style="margin-top:30px; color:#999; font-size:12px;">
+  After saving all PNGs, you can delete this HTML file.
+</p>
+
+<script>
+  const svgData = '<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a1a2e"/><stop offset="100%" stop-color="#16213e"/></linearGradient></defs><rect width="512" height="512" rx="110" fill="url(#bg)"/><circle cx="256" cy="240" r="160" fill="none" stroke="#3b82f6" stroke-width="28" stroke-dasharray="250 753" stroke-linecap="round" transform="rotate(-90 256 240)"/><circle cx="256" cy="240" r="160" fill="none" stroke="#22c55e" stroke-width="28" stroke-dasharray="300 703" stroke-linecap="round" transform="rotate(55 256 240)"/><circle cx="256" cy="240" r="160" fill="none" stroke="#f59e0b" stroke-width="28" stroke-dasharray="200 803" stroke-linecap="round" transform="rotate(200 256 240)"/><text x="256" y="265" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, \'Segoe UI\', sans-serif" font-size="120" font-weight="700" fill="#ffffff" letter-spacing="-2">$</text></svg>';
+
+  const img = new Image();
+  const svgBlob = new Blob([svgData], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(svgBlob);
+  img.onload = () => {
+    [180, 192, 512].forEach(size => {
+      const canvas = document.getElementById('c' + size);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, size, size);
+    });
+  };
+  img.src = url;
+
+  function downloadIcon(size) {
+    const canvas = document.getElementById('c' + size);
+    canvas.toBlob(blob => {
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = 'icon-' + size + '.png';
+      a.click();
+      URL.revokeObjectURL(downloadUrl);
+    });
+  }
+</script>
+</body>
+</html>

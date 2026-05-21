@@ -10,6 +10,24 @@ const CATEGORIES = [
   'Others',
 ]
 
+const CATEGORY_EMOJI = {
+  'Food & Drinks': '\u{1F354}',
+  'Transport': '\u{1F698}',
+  'Entertainment': '\u{1F3AE}',
+  'Learning': '\u{1F4DA}',
+  'Daily Supplies': '\u{1F6CD}',
+  'Others': '\u{1F4E6}',
+}
+
+const CATEGORY_CSS_CLASS = {
+  'Food & Drinks': 'cat-food',
+  'Transport': 'cat-transport',
+  'Entertainment': 'cat-entertainment',
+  'Learning': 'cat-learning',
+  'Daily Supplies': 'cat-supplies',
+  'Others': 'cat-others',
+}
+
 function todayStr() {
   return new Date().toISOString().slice(0, 10)
 }
@@ -101,7 +119,6 @@ export default function App() {
     return { monthlyTotal, todayTotal }
   }, [expenses, month, today])
 
-  // Group by date, sorted newest first
   const dateGroups = useMemo(() => {
     const monthExpenses = expenses.filter(e => e.date.startsWith(month + '-'))
     const map = {}
@@ -110,17 +127,16 @@ export default function App() {
       map[e.date].total += e.amount
       map[e.date].items.push(e)
     }
-    // Sort items within each date group by id descending
     for (const key of Object.keys(map)) {
       map[key].items.sort((a, b) => b.id.localeCompare(a.id))
     }
-    // Return entries sorted by date descending
     return Object.entries(map).sort((a, b) => b[0].localeCompare(a[0]))
   }, [expenses, month])
 
   const currentBudget = budgetMap[month] || 0
   const remaining = currentBudget - monthlyTotal
   const totalRecords = dateGroups.reduce((sum, [, g]) => sum + g.items.length, 0)
+  const budgetPercent = currentBudget > 0 ? Math.min((monthlyTotal / currentBudget) * 100, 100) : 0
 
   const handleSetBudget = useCallback(() => {
     const val = parseFloat(budgetInput)
@@ -173,6 +189,11 @@ export default function App() {
     fileInputRef.current.value = ''
   }, [])
 
+  const progressColor =
+    budgetPercent >= 90 ? '#ef4444' :
+    budgetPercent >= 70 ? '#f59e0b' :
+    '#22c55e'
+
   return (
     <div className="app">
       <div className="header">Expense Tracker</div>
@@ -199,6 +220,29 @@ export default function App() {
         </div>
       </div>
 
+      {/* Budget Progress Bar */}
+      {currentBudget > 0 && (
+        <div className="budget-progress">
+          <div className="progress-header">
+            <span className="progress-label">Budget Used</span>
+            <span className="progress-percent">{Math.round(budgetPercent)}%</span>
+          </div>
+          <div className="progress-track">
+            <div
+              className="progress-fill"
+              style={{ width: `${budgetPercent}%`, background: progressColor }}
+            />
+          </div>
+          <div className="progress-sub">
+            ${monthlyTotal.toLocaleString()} of ${currentBudget.toLocaleString()}
+            {remaining >= 0
+              ? ` • $${remaining.toLocaleString()} left`
+              : ` • $${Math.abs(remaining).toLocaleString()} over`
+            }
+          </div>
+        </div>
+      )}
+
       {/* Budget Setting */}
       <div className="budget-bar">
         <input
@@ -214,10 +258,10 @@ export default function App() {
       {/* Export / Import */}
       <div className="toolbar">
         <button className="tool-btn" onClick={() => exportJSON(expenses, budgetMap)}>
-          Export JSON
+          ↓ Export JSON
         </button>
         <button className="tool-btn" onClick={() => exportCSV(expenses)}>
-          Export CSV
+          ↓ Export CSV
         </button>
         <input
           type="file"
@@ -227,7 +271,7 @@ export default function App() {
           style={{ display: 'none' }}
         />
         <button className="tool-btn" onClick={() => fileInputRef.current?.click()}>
-          Import JSON
+          ↑ Import JSON
         </button>
       </div>
 
@@ -246,20 +290,33 @@ export default function App() {
             value={amount}
             onChange={e => setAmount(e.target.value)}
             inputMode="decimal"
-            style={{ maxWidth: 120 }}
+            style={{ maxWidth: 130 }}
           />
         </div>
-        <div className="form-row">
-          <select value={category} onChange={e => setCategory(e.target.value)}>
+
+        {/* Category Pills */}
+        <div className="category-pills">
+          <span className="form-label">Category</span>
+          <div className="pills-row">
             {CATEGORIES.map(c => (
-              <option key={c} value={c}>{c}</option>
+              <button
+                key={c}
+                type="button"
+                className={'category-pill' + (category === c ? ' selected' : '')}
+                onClick={() => setCategory(c)}
+              >
+                {CATEGORY_EMOJI[c]} {c}
+              </button>
             ))}
-          </select>
+          </div>
+        </div>
+
+        <div className="form-row">
           <input
             type="date"
             value={date}
             onChange={e => setDate(e.target.value)}
-            style={{ maxWidth: 160 }}
+            style={{ maxWidth: 170 }}
           />
         </div>
         <button type="submit" className="add-btn">Add Expense</button>
@@ -272,7 +329,11 @@ export default function App() {
 
       <div className="expense-list">
         {dateGroups.length === 0 && (
-          <div className="empty">No expenses yet. Start tracking!</div>
+          <div className="empty">
+            <div className="empty-icon">{'\u{1F4B0}'}</div>
+            <div className="empty-title">No expenses this month</div>
+            <div className="empty-sub">Add your first expense above</div>
+          </div>
         )}
         {dateGroups.map(([dateStr, group]) => (
           <div key={dateStr} className="date-group">
@@ -281,7 +342,8 @@ export default function App() {
               <span className="date-total">${group.total.toLocaleString()}</span>
             </div>
             {group.items.map(e => (
-              <div key={e.id} className="expense-item">
+              <div key={e.id} className={'expense-item ' + (CATEGORY_CSS_CLASS[e.category] || 'cat-others')}>
+                <div className="expense-emoji">{CATEGORY_EMOJI[e.category] || '\u{1F4E6}'}</div>
                 <div className="expense-info">
                   <div className="name">{e.name}</div>
                   <div className="category">{e.category}</div>
@@ -292,7 +354,7 @@ export default function App() {
                   onClick={() => handleDelete(e.id)}
                   title="Delete"
                 >
-                  &#x2715;
+                  {'✕'}
                 </button>
               </div>
             ))}
