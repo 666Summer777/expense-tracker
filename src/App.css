@@ -76,7 +76,7 @@ svg {
   align-items: center;
   justify-content: flex-start;
   gap: 16px;
-  max-width: calc(100% - 158px);
+  max-width: calc(100% - 64px);
   min-width: 0;
 }
 
@@ -122,34 +122,6 @@ svg {
   bottom: 18px;
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.history-btn {
-  height: 46px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(145deg, #f1f6ed 0%, #e8efe3 100%);
-  color: var(--green-deep);
-  border: 1px solid rgba(66, 111, 77, 0.22);
-  border-radius: 999px;
-  padding: 0 15px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.82),
-    0 8px 18px rgba(66, 111, 77, 0.08);
-  font-size: 14px;
-  font-weight: 850;
-  line-height: 1;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.16s ease, transform 0.1s ease, border-color 0.16s ease;
-}
-
-.history-btn:active {
-  background: #e2ebdc;
-  border-color: rgba(66, 111, 77, 0.32);
-  transform: scale(0.95);
 }
 
 .more-btn {
@@ -181,7 +153,7 @@ svg {
   position: absolute;
   right: 0;
   top: calc(100% + 12px);
-  width: 184px;
+  width: 196px;
   background: rgba(255, 254, 250, 0.96);
   color: var(--text);
   border: 1px solid var(--line);
@@ -630,12 +602,125 @@ svg {
   box-shadow: 0 7px 16px rgba(66, 111, 77, 0.11);
 }
 
-/* Date input */
-.form-row input[type="date"] {
+/* Date picker */
+.date-picker {
+  position: relative;
+}
+
+.date-picker-button {
+  width: 100%;
   min-height: 52px;
-  max-width: none !important;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(72, 88, 65, 0.16);
+  border-radius: 16px;
+  padding: 12px 14px 12px 18px;
+  background: rgba(255, 254, 250, 0.92);
   color: var(--text-strong);
+  font-size: 16px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.date-picker-button:focus-visible {
+  outline: 3px solid rgba(66, 111, 77, 0.18);
+  outline-offset: 2px;
+}
+
+.date-picker-button:active {
+  background: #fffefa;
+  border-color: rgba(66, 111, 77, 0.32);
+}
+
+.date-picker-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: var(--green-deep);
+}
+
+.date-picker-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.date-picker-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 10px);
+  z-index: 20;
+  background: #fffefa;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 22px 46px rgba(37, 45, 34, 0.18);
+}
+
+.date-picker-header {
+  margin-bottom: 12px;
+  color: var(--text-strong);
+  font-size: 16px;
+  font-weight: 850;
+  text-align: center;
+}
+
+.date-picker-weekdays,
+.date-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.date-picker-weekdays {
+  margin-bottom: 8px;
+}
+
+.date-picker-weekdays span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.date-picker-day,
+.date-picker-empty {
+  aspect-ratio: 1;
+  min-width: 0;
+  border-radius: 12px;
+}
+
+.date-picker-day {
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.date-picker-day:active {
+  transform: scale(0.94);
+}
+
+.date-picker-day.selected {
+  background: var(--green-soft);
+  color: var(--green-deep);
+  border-color: rgba(66, 111, 77, 0.26);
 }
 
 /* Add button */
@@ -988,7 +1073,7 @@ svg {
 
   .header-brand {
     gap: 12px;
-    max-width: calc(100% - 142px);
+    max-width: calc(100% - 56px);
   }
 
   .leaf-badge {
@@ -1008,13 +1093,6 @@ svg {
   .header-actions {
     right: 14px;
     bottom: 16px;
-    gap: 7px;
-  }
-
-  .history-btn {
-    height: 42px;
-    padding: 0 12px;
-    font-size: 13px;
   }
 
   .more-btn {
