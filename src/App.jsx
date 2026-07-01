@@ -28,6 +28,8 @@ const CATEGORY_CSS_CLASS = {
   'Others': 'cat-others',
 }
 
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
 function LeafIcon() {
   return (
     <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
@@ -129,7 +131,119 @@ function formatMonthTitle(monthStr) {
 
 function formatMonthButton(monthStr) {
   const [y, m] = monthStr.split('-')
-  return `${y}年${Number(m)}月`
+  const date = new Date(Number(y), Number(m) - 1, 1)
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+function formatDateInputLabel(dateStr) {
+  const [y, m, d] = dateStr.split('-')
+  const date = new Date(Number(y), Number(m) - 1, Number(d))
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+function buildMonthCalendar(monthStr) {
+  const [year, month] = monthStr.split('-').map(Number)
+  const firstDay = new Date(year, month - 1, 1)
+  const daysInMonth = new Date(year, month, 0).getDate()
+  const leadingDays = firstDay.getDay()
+  const cells = []
+
+  for (let i = 0; i < leadingDays; i += 1) {
+    cells.push(null)
+  }
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    cells.push(`${monthStr}-${String(day).padStart(2, '0')}`)
+  }
+
+  while (cells.length % 7 !== 0) {
+    cells.push(null)
+  }
+
+  return cells
+}
+
+function EnglishDatePicker({ value, month, onChange }) {
+  const [open, setOpen] = useState(false)
+  const pickerRef = useRef(null)
+  const calendarDays = useMemo(() => buildMonthCalendar(month), [month])
+
+  useEffect(() => {
+    if (!open) return
+
+    const handlePointerDown = (event) => {
+      if (!pickerRef.current?.contains(event.target)) {
+        setOpen(false)
+      }
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setOpen(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [open])
+
+  return (
+    <div className="date-picker" ref={pickerRef}>
+      <button
+        type="button"
+        className="date-picker-button"
+        onClick={() => setOpen(current => !current)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+      >
+        <span>{formatDateInputLabel(value)}</span>
+        <span className="date-picker-icon" aria-hidden="true">
+          <StatIcon type="calendar" />
+        </span>
+      </button>
+      {open && (
+        <div className="date-picker-panel" role="dialog" aria-label="Choose date">
+          <div className="date-picker-header">{formatMonthTitle(month)}</div>
+          <div className="date-picker-weekdays">
+            {WEEKDAYS.map(day => (
+              <span key={day}>{day}</span>
+            ))}
+          </div>
+          <div className="date-picker-grid">
+            {calendarDays.map((day, index) => (
+              day ? (
+                <button
+                  key={day}
+                  type="button"
+                  className={'date-picker-day' + (value === day ? ' selected' : '')}
+                  onClick={() => {
+                    onChange(day)
+                    setOpen(false)
+                  }}
+                >
+                  {Number(day.slice(-2))}
+                </button>
+              ) : (
+                <span key={`empty-${index}`} className="date-picker-empty" />
+              )
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function loadJSON(key, fallback) {
@@ -430,16 +544,6 @@ export default function App() {
         <div className="header-actions" ref={headerActionsRef}>
           <button
             type="button"
-            className="history-btn"
-            onClick={handleToggleHistoryMenu}
-            aria-haspopup="menu"
-            aria-expanded={historyMenuOpen}
-            aria-label="Open history menu"
-          >
-            History
-          </button>
-          <button
-            type="button"
             className="more-btn"
             onClick={handleToggleBackupMenu}
             aria-haspopup="menu"
@@ -474,8 +578,11 @@ export default function App() {
             </div>
           )}
           {backupMenuOpen && (
-            <div className="backup-menu" role="menu" aria-label="Backup">
-              <div className="backup-menu-title">Backup</div>
+            <div className="backup-menu" role="menu" aria-label="Menu">
+              <div className="backup-menu-title">Menu</div>
+              <button type="button" className="backup-menu-item" onClick={handleToggleHistoryMenu} role="menuitem">
+                History
+              </button>
               <button type="button" className="backup-menu-item" onClick={handleExportJSON} role="menuitem">
                 Export JSON
               </button>
@@ -602,12 +709,10 @@ export default function App() {
         </div>
 
         <div className="form-row">
-          <input
-            type="date"
+          <EnglishDatePicker
             value={date}
-            min={`${month}-01`}
-            max={lastDayOfMonthStr(month)}
-            onChange={e => setDate(e.target.value)}
+            month={month}
+            onChange={setDate}
           />
         </div>
         <button type="submit" className="add-btn">Add Expense</button>
