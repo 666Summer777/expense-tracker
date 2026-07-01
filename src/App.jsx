@@ -28,12 +28,80 @@ const CATEGORY_CSS_CLASS = {
   'Others': 'cat-others',
 }
 
+function LeafIcon() {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+      <path d="M12 36c9.5-6.5 16.5-14.8 21-25" />
+      <path d="M22.5 24.5c-6.8.4-10.7-3.2-11-9.7 6.6-.4 10.5 3 11 9.7Z" />
+      <path d="M27.8 19.2c-1.1-6.4 1.8-10.5 8-12.2 1.2 6.3-1.5 10.4-8 12.2Z" />
+      <path d="M18.3 31.8c-5.4 1.8-9.4-.1-11.9-5.5 5.3-1.9 9.3-.1 11.9 5.5Z" />
+      <path d="M27.8 30.5c-5.4-1.2-8.1-4.8-7.9-10.7 5.5 1.1 8.1 4.7 7.9 10.7Z" />
+    </svg>
+  )
+}
+
+function StatIcon({ type }) {
+  if (type === 'wallet') {
+    return (
+      <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+        <path d="M10 16.5h24.5A5.5 5.5 0 0 1 40 22v13.5H10A4 4 0 0 1 6 31.5v-11A4 4 0 0 1 10 16.5Z" />
+        <path d="M13 16.5 28.5 9l4 7.5" />
+        <path d="M31.5 25.5H42v8H31.5a4 4 0 0 1 0-8Z" />
+        <path d="M35 29.5h.1" />
+      </svg>
+    )
+  }
+
+  if (type === 'spent') {
+    return (
+      <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+        <circle cx="24" cy="24" r="16" />
+        <path d="M24 14v18" />
+        <path d="m16.5 25 7.5 7.5 7.5-7.5" />
+      </svg>
+    )
+  }
+
+  if (type === 'calendar') {
+    return (
+      <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+        <rect x="9" y="12" width="30" height="28" rx="4" />
+        <path d="M16 8v8" />
+        <path d="M32 8v8" />
+        <path d="M9 20h30" />
+        <path d="M17 27h.1M24 27h.1M31 27h.1M17 34h.1M24 34h.1" />
+      </svg>
+    )
+  }
+
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+      <path d="M24 8v16h16A16 16 0 1 1 24 8Z" />
+      <path d="M29 8.8A16 16 0 0 1 39.2 19H29Z" />
+    </svg>
+  )
+}
+
 function todayStr() {
-  return new Date().toISOString().slice(0, 10)
+  const date = new Date()
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 function currentMonthStr() {
   return todayStr().slice(0, 7)
+}
+
+function lastDayOfMonthStr(monthStr) {
+  const [year, month] = monthStr.split('-').map(Number)
+  const lastDay = new Date(year, month, 0).getDate()
+  return `${monthStr}-${String(lastDay).padStart(2, '0')}`
+}
+
+function defaultDateForMonth(monthStr) {
+  return monthStr === currentMonthStr() ? todayStr() : lastDayOfMonthStr(monthStr)
 }
 
 function generateId() {
@@ -48,6 +116,20 @@ function formatDate(dateStr) {
     day: 'numeric',
     weekday: 'short',
   })
+}
+
+function formatMonthTitle(monthStr) {
+  const [y, m] = monthStr.split('-')
+  const date = new Date(Number(y), Number(m) - 1, 1)
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+function formatMonthButton(monthStr) {
+  const [y, m] = monthStr.split('-')
+  return `${y}年${Number(m)}月`
 }
 
 function loadJSON(key, fallback) {
@@ -90,41 +172,49 @@ function exportCSV(expenses) {
 export default function App() {
   const [expenses, setExpenses] = useState(() => loadJSON('expenses', []))
   const [budgetMap, setBudgetMap] = useState(() => loadJSON('budget', {}))
+  const [selectedMonth, setSelectedMonth] = useState(() => currentMonthStr())
   const [budgetInput, setBudgetInput] = useState('')
   const fileInputRef = useRef(null)
-  const backupMenuRef = useRef(null)
+  const headerActionsRef = useRef(null)
 
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState(CATEGORIES[0])
   const [date, setDate] = useState(todayStr())
   const [backupMenuOpen, setBackupMenuOpen] = useState(false)
+  const [historyMenuOpen, setHistoryMenuOpen] = useState(false)
   const [pendingDeleteExpense, setPendingDeleteExpense] = useState(null)
 
-  const month = currentMonthStr()
+  const currentMonth = currentMonthStr()
+  const month = selectedMonth
   const today = todayStr()
+  const isCurrentMonth = month === currentMonth
 
   useEffect(() => { saveJSON('expenses', expenses) }, [expenses])
   useEffect(() => { saveJSON('budget', budgetMap) }, [budgetMap])
 
   useEffect(() => {
-    if (budgetMap[month]) {
-      setBudgetInput(String(budgetMap[month]))
-    }
-  }, [month]) // eslint-disable-line react-hooks/exhaustive-deps
+    setBudgetInput(
+      Object.prototype.hasOwnProperty.call(budgetMap, month)
+        ? String(budgetMap[month])
+        : ''
+    )
+  }, [budgetMap, month])
 
   useEffect(() => {
-    if (!backupMenuOpen) return
+    if (!backupMenuOpen && !historyMenuOpen) return
 
     const handlePointerDown = (event) => {
-      if (!backupMenuRef.current?.contains(event.target)) {
+      if (!headerActionsRef.current?.contains(event.target)) {
         setBackupMenuOpen(false)
+        setHistoryMenuOpen(false)
       }
     }
 
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
         setBackupMenuOpen(false)
+        setHistoryMenuOpen(false)
       }
     }
 
@@ -135,7 +225,7 @@ export default function App() {
       document.removeEventListener('pointerdown', handlePointerDown)
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [backupMenuOpen])
+  }, [backupMenuOpen, historyMenuOpen])
 
   useEffect(() => {
     if (!pendingDeleteExpense) return
@@ -153,14 +243,49 @@ export default function App() {
     }
   }, [pendingDeleteExpense])
 
-  const { monthlyTotal, todayTotal } = useMemo(() => {
+  const availableMonths = useMemo(() => {
+    const months = new Set()
+    for (const expense of expenses) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(expense.date)) {
+        months.add(expense.date.slice(0, 7))
+      }
+    }
+    for (const budgetMonth of Object.keys(budgetMap)) {
+      if (/^\d{4}-\d{2}$/.test(budgetMonth)) {
+        months.add(budgetMonth)
+      }
+    }
+    return Array.from(months).sort((a, b) => b.localeCompare(a))
+  }, [expenses, budgetMap])
+
+  const monthSummaries = useMemo(() => {
+    const summaries = {}
+    for (const availableMonth of availableMonths) {
+      summaries[availableMonth] = {
+        records: 0,
+        total: 0,
+      }
+    }
+    for (const expense of expenses) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(expense.date)) continue
+      const expenseMonth = expense.date.slice(0, 7)
+      if (!summaries[expenseMonth]) {
+        summaries[expenseMonth] = { records: 0, total: 0 }
+      }
+      summaries[expenseMonth].records += 1
+      summaries[expenseMonth].total += expense.amount
+    }
+    return summaries
+  }, [availableMonths, expenses])
+
+  const { monthlyTotal, dayTotal } = useMemo(() => {
     const monthExpenses = expenses.filter(e => e.date.startsWith(month + '-'))
     const monthlyTotal = monthExpenses.reduce((sum, e) => sum + e.amount, 0)
-    const todayTotal = expenses
-      .filter(e => e.date === today)
+    const dayTotal = expenses
+      .filter(e => e.date === date)
       .reduce((sum, e) => sum + e.amount, 0)
-    return { monthlyTotal, todayTotal }
-  }, [expenses, month, today])
+    return { monthlyTotal, dayTotal }
+  }, [expenses, month, date])
 
   const dateGroups = useMemo(() => {
     const monthExpenses = expenses.filter(e => e.date.startsWith(month + '-'))
@@ -180,6 +305,10 @@ export default function App() {
   const remaining = currentBudget - monthlyTotal
   const totalRecords = dateGroups.reduce((sum, [, g]) => sum + g.items.length, 0)
   const budgetPercent = currentBudget > 0 ? Math.min((monthlyTotal / currentBudget) * 100, 100) : 0
+  const expenseListTitle = isCurrentMonth
+    ? `This Month (${totalRecords} records)`
+    : `${formatMonthTitle(month)} (${totalRecords} records)`
+  const dayCardLabel = date === today ? 'Today' : 'Selected Day'
 
   const handleSetBudget = useCallback(() => {
     const val = parseFloat(budgetInput)
@@ -203,7 +332,6 @@ export default function App() {
     setName('')
     setAmount('')
     setCategory(CATEGORIES[0])
-    setDate(todayStr())
   }, [name, amount, category, date])
 
   const handleDelete = useCallback((id) => {
@@ -262,26 +390,89 @@ export default function App() {
     fileInputRef.current?.click()
   }, [])
 
+  const handleToggleBackupMenu = useCallback(() => {
+    setBackupMenuOpen(open => !open)
+    setHistoryMenuOpen(false)
+  }, [])
+
+  const handleToggleHistoryMenu = useCallback(() => {
+    setHistoryMenuOpen(open => !open)
+    setBackupMenuOpen(false)
+  }, [])
+
+  const handleSelectMonth = useCallback((nextMonth) => {
+    setSelectedMonth(nextMonth)
+    setHistoryMenuOpen(false)
+    setBackupMenuOpen(false)
+    setDate(prev => (
+      prev.startsWith(nextMonth + '-') ? prev : defaultDateForMonth(nextMonth)
+    ))
+  }, [])
+
+  const handleGoToCurrentMonth = useCallback(() => {
+    handleSelectMonth(currentMonthStr())
+  }, [handleSelectMonth])
+
   const progressColor =
-    budgetPercent >= 90 ? 'linear-gradient(90deg, #fda4af 0%, #fb7185 100%)' :
-    budgetPercent >= 70 ? 'linear-gradient(90deg, #fde68a 0%, #fbbf24 100%)' :
-    'linear-gradient(90deg, #a7f3d0 0%, #93c5fd 100%)'
+    budgetPercent >= 90 ? 'linear-gradient(90deg, #d78372 0%, #bd5e55 100%)' :
+    budgetPercent >= 70 ? 'linear-gradient(90deg, #d8b66f 0%, #b98d3d 100%)' :
+    'linear-gradient(90deg, #86a982 0%, #3f7852 100%)'
 
   return (
     <div className="app">
       <div className="header">
-        <div className="header-title">Expense Tracker</div>
-        <div className="header-actions" ref={backupMenuRef}>
+        <div className="header-brand">
+          <div className="leaf-badge">
+            <LeafIcon />
+          </div>
+          <div className="header-title">Expense Tracker</div>
+        </div>
+        <div className="header-actions" ref={headerActionsRef}>
+          <button
+            type="button"
+            className="history-btn"
+            onClick={handleToggleHistoryMenu}
+            aria-haspopup="menu"
+            aria-expanded={historyMenuOpen}
+            aria-label="Open history menu"
+          >
+            History
+          </button>
           <button
             type="button"
             className="more-btn"
-            onClick={() => setBackupMenuOpen(open => !open)}
+            onClick={handleToggleBackupMenu}
             aria-haspopup="menu"
             aria-expanded={backupMenuOpen}
             aria-label="Open backup menu"
           >
             ...
           </button>
+          {historyMenuOpen && (
+            <div className="history-menu" role="menu" aria-label="History months">
+              <div className="history-menu-title">History</div>
+              {availableMonths.length === 0 && (
+                <div className="history-menu-empty">No history yet</div>
+              )}
+              {availableMonths.map(availableMonth => {
+                const summary = monthSummaries[availableMonth] || { records: 0, total: 0 }
+                return (
+                  <button
+                    key={availableMonth}
+                    type="button"
+                    className={'history-menu-item' + (month === availableMonth ? ' selected' : '')}
+                    onClick={() => handleSelectMonth(availableMonth)}
+                    role="menuitem"
+                  >
+                    <span className="history-month-name">{formatMonthButton(availableMonth)}</span>
+                    <span className="history-month-meta">
+                      {summary.records} records - ${summary.total.toLocaleString()}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
           {backupMenuOpen && (
             <div className="backup-menu" role="menu" aria-label="Backup">
               <div className="backup-menu-title">Backup</div>
@@ -308,20 +499,32 @@ export default function App() {
 
       {/* Summary Cards */}
       <div className="summary">
-        <div className="summary-card">
-          <div className="label">Monthly Budget</div>
+        <div className="summary-card stat-budget">
+          <div className="summary-card-top">
+            <div className="stat-icon"><StatIcon type="wallet" /></div>
+            <div className="label">Monthly Budget</div>
+          </div>
           <div className="value">${currentBudget.toLocaleString()}</div>
         </div>
-        <div className="summary-card">
-          <div className="label">Spent</div>
+        <div className="summary-card stat-spent">
+          <div className="summary-card-top">
+            <div className="stat-icon"><StatIcon type="spent" /></div>
+            <div className="label">Spent</div>
+          </div>
           <div className="value">${monthlyTotal.toLocaleString()}</div>
         </div>
-        <div className="summary-card">
-          <div className="label">Today</div>
-          <div className="value">${todayTotal.toLocaleString()}</div>
+        <div className="summary-card stat-today">
+          <div className="summary-card-top">
+            <div className="stat-icon"><StatIcon type="calendar" /></div>
+            <div className="label">{dayCardLabel}</div>
+          </div>
+          <div className="value">${dayTotal.toLocaleString()}</div>
         </div>
-        <div className="summary-card">
-          <div className="label">Remaining</div>
+        <div className="summary-card stat-remaining">
+          <div className="summary-card-top">
+            <div className="stat-icon"><StatIcon type="remaining" /></div>
+            <div className="label">Remaining</div>
+          </div>
           <div className={'value ' + (remaining >= 0 ? 'safe' : 'danger')}>
             ${remaining.toLocaleString()}
           </div>
@@ -402,6 +605,8 @@ export default function App() {
           <input
             type="date"
             value={date}
+            min={`${month}-01`}
+            max={lastDayOfMonthStr(month)}
             onChange={e => setDate(e.target.value)}
           />
         </div>
@@ -409,8 +614,13 @@ export default function App() {
       </form>
 
       {/* Expense List */}
-      <div className="divider">
-        This Month ({totalRecords} records)
+      <div className="divider month-divider">
+        <span>{expenseListTitle}</span>
+        {!isCurrentMonth && (
+          <button type="button" className="current-month-link" onClick={handleGoToCurrentMonth}>
+            This Month
+          </button>
+        )}
       </div>
 
       <div className="expense-list">
